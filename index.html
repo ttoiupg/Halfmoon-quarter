@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Game Token Bank · Firebase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Firebase (compat) CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-1: #020617;
+      --bg-2: #0b1120;
+      --accent: #22d3ee;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --danger: #f97373;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.6);
+      --transition-fast: 140ms ease-out;
+      --transition-med: 220ms ease-out;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+        linear-gradient(145deg, var(--bg-1), var(--bg-2));
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app-shell {
+      width: min(960px, 100%);
+      max-height: 640px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+      overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+      .app-shell {
+        max-height: none;
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .brand-panel {
+        display: none;
+      }
+    }
+
+    /* Left side (brand) */
+    .brand-panel {
+      padding: 24px;
+      border-right: 1px solid rgba(148, 163, 184, 0.25);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.2), transparent 60%),
+        #020617;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-glyph {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0%, #e0f7fa, transparent 70%),
+        linear-gradient(135deg, #22d3ee, #0284c7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(34, 211, 238, 0.6);
+    }
+
+    .logo-glyph span {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #e5f2ff;
+    }
+
+    .brand-title {
+      margin-top: 24px;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 260px;
+    }
+
+    .brand-note {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .brand-note strong {
+      color: #e5f2ff;
+      font-weight: 500;
+    }
+
+    /* Right side (auth/dashboard) */
+    .main-panel {
+      padding: 22px 22px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .top-bar button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      padding: 5px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .top-bar button:hover {
+      background: rgba(37, 99, 235, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .tabs {
+      display: inline-flex;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      gap: 4px;
+    }
+
+    .tab {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast),
+        transform var(--transition-fast);
+    }
+
+    .tab.active {
+      background: rgba(15, 23, 42, 1);
+      color: var(--text-main);
+      transform: translateY(-1px);
+    }
+
+    .auth-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .auth-section h2 {
+      font-size: 22px;
+      margin-top: 6px;
+      margin-bottom: 4px;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .field input {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast), transform 80ms ease-out;
+    }
+
+    .field input:focus {
+      border-color: rgba(34, 211, 238, 0.9);
+      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6);
+      background: rgba(15, 23, 42, 1);
+      transform: translateY(-0.5px);
+    }
+
+    .primary-btn {
+      margin-top: 2px;
+      border-radius: 999px;
+      border: none;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, #22d3ee, #0284c7);
+      color: #020617;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      font-size: 12px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 10px 26px rgba(34, 211, 238, 0.6);
+      transition: transform var(--transition-med), box-shadow var(--transition-med),
+        filter var(--transition-med);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1.5px);
+      filter: brightness(1.06);
+      box-shadow: 0 14px 38px rgba(34, 211, 238, 0.7);
+    }
+
+    .primary-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 22px rgba(34, 211, 238, 0.55);
+    }
+
+    .helper-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .msg {
+      font-size: 11px;
+      min-height: 1.2em;
+      margin-top: 4px;
+    }
+
+    .msg.error {
+      color: var(--danger);
+    }
+
+    .msg.ok {
+      color: #4ade80;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Dashboard */
+    .dashboard {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: dash-in 260ms var(--transition-med);
+    }
+
+    @keyframes dash-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .user-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .user-info span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .logout-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-muted);
+      padding: 5px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast),
+        color var(--transition-fast);
+    }
+
+    .logout-btn:hover {
+      background: rgba(15, 23, 42, 1);
+      color: #e5e7eb;
+      transform: translateY(-1px);
+    }
+
+    .balance-card {
+      border-radius: var(--radius-xl);
+      padding: 18px 16px 14px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .balance-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .balance-amount {
+      font-size: clamp(34px, 5vw, 42px);
+      font-weight: 700;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .balance-amount span:last-child {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+    }
+
+    .balance-meta {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 10px;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .action-btn {
+      flex: 1 1 140px;
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.98);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform var(--transition-med), box-shadow var(--transition-med),
+        border var(--transition-med), background var(--transition-med);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.9);
+      border-color: rgba(226, 232, 240, 0.9);
+    }
+
+    .action-title {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .action-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .action-chip {
+      margin-top: 4px;
+      align-self: flex-start;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      padding: 3px 8px;
+    }
+
+    .action-chip.primary {
+      border-color: rgba(34, 211, 238, 0.9);
+      background: rgba(8, 47, 73, 0.9);
+      color: #e0f7fa;
+    }
+
+    .drawer {
+      margin-top: 6px;
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      font-size: 11px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .drawer.open {
+      display: flex;
+    }
+
+    .drawer-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .drawer-row .field-inline {
+      flex: 1 1 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .drawer-row input {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-main);
+      padding: 6px 9px;
+      font-size: 11px;
+      outline: none;
+    }
+
+    .drawer-row input:focus {
+      border-color: rgba(34, 211, 238, 0.9);
+    }
+
+    .drawer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(15, 23, 42, 1);
+      color: #e5e7eb;
+    }
+
+    .btn-small-primary {
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #22d3ee, #0284c7);
+      color: #020617;
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 16px rgba(34, 211, 238, 0.6);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .btn-small-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(34, 211, 238, 0.7);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      color: var(--text-main);
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.9);
+      z-index: 20;
+    }
+
+    .toast.show {
+      display: inline-flex;
+      animation: toast-in 160ms ease-out;
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #4ade80;
+      box-shadow: 0 0 7px rgba(74, 222, 128, 0.9);
+    }
+
+    .toast.error .toast-dot {
+      background: var(--danger);
+      box-shadow: 0 0 7px rgba(248, 113, 113, 0.9);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Brand panel -->
+    <aside class="brand-panel">
+      <div>
+        <div class="logo-mark">
+          <div class="logo-glyph"><span>◎</span></div>
+          <div class="logo-text">Token Bank</div>
+        </div>
+        <h1 class="brand-title">Game tokens, not real money.</h1>
+        <p class="brand-subtitle">
+          Keep score with your friends, check in daily for bonus tokens,
+          and transfer them like a tiny in-game bank.
+        </p>
+      </div>
+      <p class="brand-note">
+        Tokens here are <strong>for games only</strong>. No real currency,
+        no fees, just bragging rights and debt between friends.
+      </p>
+    </aside>
+
+    <!-- Main panel -->
+    <main class="main-panel">
+      <div class="top-bar">
+        <span>Game Token Bank · Firebase</span>
+        <button type="button" id="demoFillBtn">Fill demo user</button>
+      </div>
+
+      <!-- Auth -->
+      <section id="authSection" class="auth-section">
+        <div class="tabs">
+          <button class="tab active" data-tab="login">Login</button>
+          <button class="tab" data-tab="signup">Sign up</button>
+        </div>
+
+        <div id="loginPane">
+          <h2>Welcome back</h2>
+          <p class="auth-subtitle">Log in with your nickname and password.</p>
+          <form id="loginForm">
+            <div class="field">
+              <label for="login-username">Nickname</label>
+              <input id="login-username" autocomplete="username" required />
+            </div>
+            <div class="field">
+              <label for="login-password">Password</label>
+              <input id="login-password" type="password" autocomplete="current-password" required />
+            </div>
+            <button class="primary-btn" type="submit">Log in</button>
+            <div class="helper-row">
+              <span>Accounts are stored in Firebase Firestore.</span>
+            </div>
+            <div id="loginMsg" class="msg"></div>
+          </form>
+        </div>
+
+        <div id="signupPane" class="hidden">
+          <h2>Create your account</h2>
+          <p class="auth-subtitle">One nickname per person. This is only for your friend group.</p>
+          <form id="signupForm">
+            <div class="field">
+              <label for="signup-username">Nickname</label>
+              <input id="signup-username" required />
+            </div>
+            <div class="field">
+              <label for="signup-password">Password</label>
+              <input id="signup-password" type="password" required />
+            </div>
+            <div class="field">
+              <label for="signup-start">Starting tokens (optional)</label>
+              <input id="signup-start" type="number" min="0" placeholder="Default: 0" />
+            </div>
+            <button class="primary-btn" type="submit">Sign up</button>
+            <div class="helper-row">
+              <span>For demo only: password is stored hashed, but still simple.</span>
+            </div>
+            <div id="signupMsg" class="msg"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Dashboard -->
+      <section id="dashboardSection" class="dashboard hidden">
+        <div class="user-row">
+          <div class="user-info">
+            <strong id="userNameDisplay"></strong>
+            <span id="userMeta"></span>
+          </div>
+          <button class="logout-btn" id="logoutBtn">Log out</button>
+        </div>
+
+        <div class="balance-card">
+          <div class="balance-label">Current token balance</div>
+          <div class="balance-amount">
+            <span id="tokenAmount">0</span>
+            <span>tokens</span>
+          </div>
+          <div class="balance-meta">
+            <span id="checkinStatus">Daily check-in available</span>
+            <span class="pill">Backed by Firestore</span>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="action-btn" id="checkinBtn">
+            <div class="action-title">Daily check-in</div>
+            <div class="action-sub">Claim +10 tokens once per day.</div>
+            <div class="action-chip primary" id="checkinChip">+10 today</div>
+          </button>
+
+          <button class="action-btn" id="transferToggleBtn">
+            <div class="action-title">Transfer tokens</div>
+            <div class="action-sub">Send tokens to another nickname.</div>
+            <div class="action-chip">Peer to peer</div>
+          </button>
+        </div>
+
+        <div id="transferDrawer" class="drawer">
+          <div>Send tokens to a friend using their nickname.</div>
+          <div class="drawer-row">
+            <div class="field-inline">
+              <label for="transfer-to">To (nickname)</label>
+              <input id="transfer-to" placeholder="friend_nickname" />
+            </div>
+            <div class="field-inline">
+              <label for="transfer-amount">Amount</label>
+              <input id="transfer-amount" type="number" min="1" placeholder="10" />
+            </div>
+          </div>
+          <div class="drawer-actions">
+            <button class="btn-ghost" id="transferCancelBtn">Cancel</button>
+            <button class="btn-small-primary" id="transferSubmitBtn">Send</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast">
+    <div class="toast-dot"></div>
+    <span id="toastText"></span>
+  </div>
+
+  <script>
+    // ===== Firebase config (REPLACE WITH YOUR OWN) =====
+    const firebaseConfig = {
+      apiKey: "PASTE_YOUR_API_KEY",
+      authDomain: "PASTE_YOUR_AUTH_DOMAIN",
+      projectId: "PASTE_YOUR_PROJECT_ID",
+      // storageBucket, messagingSenderId, appId are optional here but recommended:
+      // storageBucket: "...",
+      // messagingSenderId: "...",
+      // appId: "..."
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const USERS_COLLECTION = "users";
+    const STORAGE_KEY_CURRENT = "tokenBank_currentUser";
+
+    const getTodayKey = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    const showToast = (text, isError = false) => {
+      const toast = document.getElementById("toast");
+      const toastText = document.getElementById("toastText");
+      toastText.textContent = text;
+      toast.classList.toggle("error", isError);
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2200);
+    };
+
+    async function hashPassword(password) {
+      // Very simple SHA-256 hash using Web Crypto (still not real security, just better than plain text)
+      const enc = new TextEncoder();
+      const data = enc.encode(password);
+      const buf = await crypto.subtle.digest("SHA-256", data);
+      const arr = Array.from(new Uint8Array(buf));
+      return arr.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function getUserDoc(username) {
+      const ref = db.collection(USERS_COLLECTION).doc(username);
+      const snap = await ref.get();
+      return { ref, snap };
+    }
+
+    async function switchToDashboard(username) {
+      const { snap } = await getUserDoc(username);
+      if (!snap.exists) {
+        showToast("User not found in Firestore.", true);
+        localStorage.removeItem(STORAGE_KEY_CURRENT);
+        return;
+      }
+      const data = snap.data();
+
+      const authSection = document.getElementById("authSection");
+      const dashboard = document.getElementById("dashboardSection");
+      authSection.classList.add("hidden");
+      dashboard.classList.remove("hidden");
+
+      document.getElementById("userNameDisplay").textContent = username;
+      document.getElementById("userMeta").textContent =
+        `Member · Created ${data.created || "today"}`;
+
+      document.getElementById("tokenAmount").textContent = data.tokens ?? 0;
+
+      const todayKey = getTodayKey();
+      const statusEl = document.getElementById("checkinStatus");
+      const chip = document.getElementById("checkinChip");
+
+      if (data.lastCheckin === todayKey) {
+        statusEl.textContent = "Daily check-in: already claimed";
+        chip.textContent = "come back tomorrow";
+        chip.classList.remove("primary");
+      } else {
+        statusEl.textContent = "Daily check-in available";
+        chip.textContent = "+10 today";
+        chip.classList.add("primary");
+      }
+    }
+
+    function switchToAuth() {
+      document.getElementById("authSection").classList.remove("hidden");
+      document.getElementById("dashboardSection").classList.add("hidden");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(".tab");
+      const loginPane = document.getElementById("loginPane");
+      const signupPane = document.getElementById("signupPane");
+      const loginForm = document.getElementById("loginForm");
+      const signupForm = document.getElementById("signupForm");
+      const loginMsg = document.getElementById("loginMsg");
+      const signupMsg = document.getElementById("signupMsg");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const checkinBtn = document.getElementById("checkinBtn");
+      const transferToggleBtn = document.getElementById("transferToggleBtn");
+      const transferDrawer = document.getElementById("transferDrawer");
+      const transferCancelBtn = document.getElementById("transferCancelBtn");
+      const transferSubmitBtn = document.getElementById("transferSubmitBtn");
+      const demoFillBtn = document.getElementById("demoFillBtn");
+
+      // Tabs
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          tabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          const target = tab.dataset.tab;
+          if (target === "login") {
+            loginPane.classList.remove("hidden");
+            signupPane.classList.add("hidden");
+          } else {
+            signupPane.classList.remove("hidden");
+            loginPane.classList.add("hidden");
+          }
+          loginMsg.textContent = "";
+          signupMsg.textContent = "";
+          loginMsg.className = "msg";
+          signupMsg.className = "msg";
+        });
+      });
+
+      // Fill demo
+      demoFillBtn.addEventListener("click", () => {
+        document.getElementById("login-username").value = "demo";
+        document.getElementById("login-password").value = "demo123";
+        showToast("Filled demo username and password.");
+      });
+
+      // Sign up
+      signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        signupMsg.textContent = "";
+        signupMsg.className = "msg";
+
+        const username = document.getElementById("signup-username").value.trim();
+        const password = document.getElementById("signup-password").value;
+        const startVal = document.getElementById("signup-start").value;
+
+        if (!username) {
+          signupMsg.textContent = "Nickname required.";
+          signupMsg.classList.add("error");
+          return;
+        }
+
+        try {
+          const { snap, ref } = await getUserDoc(username);
+          if (snap.exists) {
+            signupMsg.textContent = "This nickname is already taken.";
+            signupMsg.classList.add("error");
+            return;
+          }
+
+          const created = getTodayKey();
+          const tokens = startVal === "" ? 0 : Math.max(0, Number(startVal) || 0);
+          const passwordHash = await hashPassword(password);
+
+          await ref.set({
+            passwordHash,
+            tokens,
+            lastCheckin: null,
+            created,
+          });
+
+          localStorage.setItem(STORAGE_KEY_CURRENT, username);
+          signupMsg.textContent = "Account created.";
+          signupMsg.classList.add("ok");
+          await switchToDashboard(username);
+          showToast("Account created.");
+        } catch (err) {
+          console.error(err);
+          signupMsg.textContent = "Error creating account (check console).";
+          signupMsg.classList.add("error");
+        }
+      });
+
+      // Login
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        loginMsg.textContent = "";
+        loginMsg.className = "msg";
+
+        const username = document.getElementById("login-username").value.trim();
+        const password = document.getElementById("login-password").value;
+
+        try {
+          const { snap } = await getUserDoc(username);
+          if (!snap.exists) {
+            loginMsg.textContent = "Invalid nickname or password.";
+            loginMsg.classList.add("error");
+            return;
+          }
+          const data = snap.data();
+          const passwordHash = await hashPassword(password);
+
+          if (data.passwordHash !== passwordHash) {
+            loginMsg.textContent = "Invalid nickname or password.";
+            loginMsg.classList.add("error");
+            return;
+          }
+
+          localStorage.setItem(STORAGE_KEY_CURRENT, username);
+          await switchToDashboard(username);
+          showToast("Logged in.");
+        } catch (err) {
+          console.error(err);
+          loginMsg.textContent = "Error logging in (check console).";
+          loginMsg.classList.add("error");
+        }
+      });
+
+      // Logout
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem(STORAGE_KEY_CURRENT);
+        switchToAuth();
+        showToast("Logged out.");
+      });
+
+      // Daily check-in
+      checkinBtn.addEventListener("click", async () => {
+        const current = localStorage.getItem(STORAGE_KEY_CURRENT);
+        if (!current) {
+          showToast("Log in first.", true);
+          return;
+        }
+        const today = getTodayKey();
+        const userRef = db.collection(USERS_COLLECTION).doc(current);
+
+        try {
+          await db.runTransaction(async (tx) => {
+            const snap = await tx.get(userRef);
+            if (!snap.exists) throw new Error("User missing.");
+            const data = snap.data();
+            if (data.lastCheckin === today) {
+              throw new Error("Already checked in.");
+            }
+            tx.update(userRef, {
+              lastCheckin: today,
+              tokens: (data.tokens || 0) + 10,
+            });
+          });
+
+          await switchToDashboard(current);
+          showToast("+10 tokens added.");
+        } catch (err) {
+          if (err.message === "Already checked in.") {
+            showToast("Already checked in today.", true);
+          } else {
+            console.error(err);
+            showToast("Error during check-in.", true);
+          }
+        }
+      });
+
+      // Transfer drawer toggle
+      transferToggleBtn.addEventListener("click", () => {
+        transferDrawer.classList.toggle("open");
+      });
+
+      transferCancelBtn.addEventListener("click", () => {
+        transferDrawer.classList.remove("open");
+      });
+
+      // Transfer
+      transferSubmitBtn.addEventListener("click", async () => {
+        const current = localStorage.getItem(STORAGE_KEY_CURRENT);
+        if (!current) {
+          showToast("Log in first.", true);
+          return;
+        }
+
+        const toUser = document.getElementById("transfer-to").value.trim();
+        const amountRaw = document.getElementById("transfer-amount").value;
+        const amount = Number(amountRaw);
+
+        if (!toUser || !amountRaw) {
+          showToast("Fill in both fields.", true);
+          return;
+        }
+        if (!Number.isFinite(amount) || amount <= 0) {
+          showToast("Amount must be positive.", true);
+          return;
+        }
+        if (toUser === current) {
+          showToast("You can't send to yourself.", true);
+          return;
+        }
+
+        const senderRef = db.collection(USERS_COLLECTION).doc(current);
+        const receiverRef = db.collection(USERS_COLLECTION).doc(toUser);
+
+        try {
+          await db.runTransaction(async (tx) => {
+            const senderSnap = await tx.get(senderRef);
+            const receiverSnap = await tx.get(receiverRef);
+
+            if (!senderSnap.exists) throw new Error("Sender missing.");
+            if (!receiverSnap.exists) throw new Error("Target user not found.");
+
+            const senderData = senderSnap.data();
+            if ((senderData.tokens || 0) < amount) {
+              throw new Error("Not enough tokens.");
+            }
+
+            tx.update(senderRef, { tokens: (senderData.tokens || 0) - amount });
+            const recvData = receiverSnap.data();
+            tx.update(receiverRef, { tokens: (recvData.tokens || 0) + amount });
+          });
+
+          transferDrawer.classList.remove("open");
+          document.getElementById("transfer-amount").value = "";
+          showToast(`Sent ${amount} tokens to ${toUser}.`);
+          await switchToDashboard(current);
+        } catch (err) {
+          if (err.message === "Target user not found.") {
+            showToast("Target user does not exist.", true);
+          } else if (err.message === "Not enough tokens.") {
+            showToast("Not enough tokens.", true);
+          } else {
+            console.error(err);
+            showToast("Error during transfer.", true);
+          }
+        }
+      });
+
+      // Auto-login if we have a current user
+      (async () => {
+        const currentUser = localStorage.getItem(STORAGE_KEY_CURRENT);
+        if (!currentUser) return;
+        try {
+          const { snap } = await getUserDoc(currentUser);
+          if (snap.exists) {
+            await switchToDashboard(currentUser);
+          } else {
+            localStorage.removeItem(STORAGE_KEY_CURRENT);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      })();
+    });
+  </script>
+</body>
+</html>
