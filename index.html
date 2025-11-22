@@ -426,6 +426,7 @@
     }
 
     .action-chip {
+      color: var(--text-main);
       margin-top: 4px;
       align-self: flex-start;
       font-size: 10px;
@@ -770,7 +771,7 @@
 
       if (data.lastCheckin === todayKey) {
         statusEl.textContent = "Daily check-in: already claimed";
-        chip.textContent = "come back tomorrow";
+        chip.textContent = "明天再回來";
         chip.classList.remove("primary");
       } else {
         statusEl.textContent = "Daily check-in available";
