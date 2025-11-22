@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Game Token Bank · Firebase + Google Login</title>
+  <title>HALFMOON Quarter</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Firebase (compat) CDN -->
@@ -38,7 +38,7 @@
     html,
     body {
       height: 100%;
-      margin: 10 0 0 0;
+      margin: 0;
       background: #000;
     }
 
@@ -51,7 +51,7 @@
       color: var(--text-main);
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items:center;
       padding: 16px 16px 24px;
     }
 
@@ -86,9 +86,6 @@
     .brand-panel {
       padding: 28px 24px;
       border-right: 1px solid rgba(148, 163, 184, 0.18);
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.18), transparent 55%),
-        #020617;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -588,42 +585,39 @@
       <div>
         <div class="logo-mark">
           <div class="logo-glyph"><span>◎</span></div>
-          <div class="logo-text">Token Bank</div>
+          <div class="logo-text">QUARTER</div>
         </div>
         <h1 class="brand-title">
-          Clean token tracking<br />for your game group.
+          代幣紀錄
         </h1>
         <p class="brand-subtitle">
-          Sign in with Google, get a daily token check-in, and transfer tokens
-          to your friends by their Gmail address.
+          使用Gmail註冊合登入，每天領10代幣
         </p>
       </div>
       <p class="brand-note">
-        Tokens here are <strong>not real money</strong>. They only represent
-        points or credits in your own games.
+        在這使用的代幣不是真實世界的錢，<strong>只用來代表個人之間的代幣</strong>
       </p>
     </aside>
 
     <!-- Right panel -->
     <main class="main-panel">
       <div class="top-bar">
-        <span><strong>Token Bank</strong> · Firebase / Google</span>
-        <button type="button" id="debugBtn">Debug: console state</button>
+        <span><strong>代幣金庫</strong> · HALFMOON / Google</span>
       </div>
 
       <!-- Auth -->
       <section id="authSection" class="auth-section">
         <div class="auth-header">
-          <h2>Sign in</h2>
-          <p>Use your Google account (Gmail) to sign in or create an account.</p>
+          <h2>登入</h2>
+          <p>使用Gmail註冊、登入</p>
         </div>
         <div class="auth-actions">
           <button type="button" id="googleSignInBtn" class="google-btn">
             <span class="google-icon"></span>
-            <span>Continue with Google</span>
+            <span>使用Google登入</span>
           </button>
           <p class="auth-note">
-            On first sign-in, a token account is created for your Google email.
+            第一次登入會有基礎代幣
           </p>
           <div id="authMsg" class="msg"></div>
         </div>
@@ -636,50 +630,50 @@
             <strong id="userNameDisplay"></strong>
             <span id="userMeta"></span>
           </div>
-          <button class="logout-btn" id="logoutBtn">Log out</button>
+          <button class="logout-btn" id="logoutBtn">登出</button>
         </div>
 
         <div class="balance-card">
-          <div class="balance-label">Current token balance</div>
+          <div class="balance-label">目前代幣</div>
           <div class="balance-amount">
             <span id="tokenAmount">0</span>
             <span>tokens</span>
           </div>
           <div class="balance-meta">
-            <span id="checkinStatus">Daily check-in available</span>
+            <span id="checkinStatus">可以領取每日代幣</span>
             <span class="pill">Firestore · Google Auth</span>
           </div>
         </div>
 
         <div class="action-row">
           <button class="action-btn" id="checkinBtn">
-            <div class="action-title">Daily check-in</div>
-            <div class="action-sub">Claim +10 tokens once per day.</div>
-            <div class="action-chip primary" id="checkinChip">+10 today</div>
+            <div class="action-title">每日領取</div>
+            <div class="action-sub">每天領去10代幣</div>
+            <div class="action-chip primary" id="checkinChip">今日+10</div>
           </button>
 
           <button class="action-btn" id="transferToggleBtn">
-            <div class="action-title">Transfer tokens</div>
-            <div class="action-sub">Send tokens to another Gmail account.</div>
-            <div class="action-chip">By email</div>
+            <div class="action-title">轉帳</div>
+            <div class="action-sub">把代幣轉到對方Gmail</div>
+            <div class="action-chip">使用Gmail</div>
           </button>
         </div>
 
         <div id="transferDrawer" class="drawer">
-          <div>Enter your friend’s Gmail address and token amount.</div>
+          <div>輸入對方Gmail來轉帳</div>
           <div class="drawer-row">
             <div class="field-inline">
-              <label for="transfer-to">To (Gmail)</label>
+              <label for="transfer-to">到(Gmail)</label>
               <input id="transfer-to" placeholder="friend@example.com" />
             </div>
             <div class="field-inline">
-              <label for="transfer-amount">Amount</label>
+              <label for="transfer-amount">數量</label>
               <input id="transfer-amount" type="number" min="1" placeholder="10" />
             </div>
           </div>
           <div class="drawer-actions">
-            <button class="btn-ghost" id="transferCancelBtn">Cancel</button>
-            <button class="btn-small-primary" id="transferSubmitBtn">Send</button>
+            <button class="btn-ghost" id="transferCancelBtn">取消</button>
+            <button class="btn-small-primary" id="transferSubmitBtn">轉帳</button>
           </div>
         </div>
       </section>
