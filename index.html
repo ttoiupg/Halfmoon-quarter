@@ -2,24 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Quater</title>
+  <title>Game Token Bank · Firebase + Google Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Firebase (compat) CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
   <style>
     :root {
       --bg-1: #020617;
-      --bg-2: #0b1120;
-      --accent: #22d3ee;
+      --bg-2: #000000;
+      --accent: #ffffff;
+      --accent-subtle: #e5e7eb;
       --text-main: #f9fafb;
       --text-muted: #9ca3af;
       --danger: #f97373;
       --radius-lg: 18px;
       --radius-xl: 24px;
-      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.6);
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.7);
       --transition-fast: 140ms ease-out;
       --transition-med: 220ms ease-out;
     }
@@ -32,27 +34,29 @@
         "Segoe UI", sans-serif;
     }
 
-    html, body {
+    html,
+    body {
       height: 100%;
       margin: 0;
-      background: #020617; /* fallback to avoid white gaps */
+      background: #000;
     }
 
     body {
       min-height: 100vh;
       background:
-        radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+        radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+        radial-gradient(circle at 90% 100%, rgba(255, 255, 255, 0.05), transparent 60%),
         linear-gradient(145deg, var(--bg-1), var(--bg-2));
       color: var(--text-main);
       display: flex;
       justify-content: center;
-      align-items: flex-start;   /* top-align content instead of perfect center */
-      padding: 16px 16px 24px;   /* a bit of bottom padding for scroll */
+      align-items: flex-start;
+      padding: 16px 16px 24px;
     }
 
     .app-shell {
       width: min(960px, 100%);
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.96);
       border-radius: 24px;
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(148, 163, 184, 0.2);
@@ -60,23 +64,29 @@
       grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
     }
 
-
     @media (max-width: 768px) {
-      .app-shell {
-        max-height: none;
-        grid-template-columns: minmax(0, 1fr);
+      body {
+        padding: 0;
       }
+
+      .app-shell {
+        width: 100%;
+        border-radius: 0;
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
       .brand-panel {
         display: none;
       }
     }
 
-    /* Left side (brand) */
+    /* Brand panel (left) */
     .brand-panel {
-      padding: 24px;
-      border-right: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 28px 24px;
+      border-right: 1px solid rgba(148, 163, 184, 0.18);
       background:
-        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.2), transparent 60%),
+        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.18), transparent 55%),
         #020617;
       display: flex;
       flex-direction: column;
@@ -94,12 +104,13 @@
       width: 34px;
       height: 34px;
       border-radius: 999px;
-      background: radial-gradient(circle at 30% 0%, #e0f7fa, transparent 70%),
-        linear-gradient(135deg, #22d3ee, #0284c7);
+      background: radial-gradient(circle at 30% 0%, #f9fafb, transparent 65%),
+        linear-gradient(135deg, #ffffff, #d4d4d8);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 25px rgba(34, 211, 238, 0.6);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.6);
+      color: #020617;
     }
 
     .logo-glyph span {
@@ -110,23 +121,23 @@
     .logo-text {
       font-size: 18px;
       font-weight: 600;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #e5f2ff;
+      color: #e5e7eb;
     }
 
     .brand-title {
-      margin-top: 24px;
-      font-size: 30px;
+      margin-top: 26px;
+      font-size: 28px;
       font-weight: 700;
-      line-height: 1.1;
+      line-height: 1.2;
     }
 
     .brand-subtitle {
       margin-top: 12px;
       font-size: 14px;
       color: var(--text-muted);
-      max-width: 260px;
+      max-width: 280px;
     }
 
     .brand-note {
@@ -135,16 +146,16 @@
     }
 
     .brand-note strong {
-      color: #e5f2ff;
+      color: var(--accent-subtle);
       font-weight: 500;
     }
 
-    /* Right side (auth/dashboard) */
+    /* Main panel (right) */
     .main-panel {
       padding: 22px 22px 18px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
     .top-bar {
@@ -155,143 +166,119 @@
       color: var(--text-muted);
     }
 
+    .top-bar span strong {
+      color: var(--accent-subtle);
+      font-weight: 500;
+    }
+
     .top-bar button {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      background: rgba(15, 23, 42, 0.98);
       color: var(--text-main);
-      padding: 5px 10px;
+      padding: 6px 11px;
       font-size: 11px;
       cursor: pointer;
-      transition: background var(--transition-fast), transform var(--transition-fast);
+      transition: background var(--transition-fast), transform var(--transition-fast),
+        color var(--transition-fast);
     }
 
     .top-bar button:hover {
-      background: rgba(37, 99, 235, 0.9);
+      background: #f9fafb;
+      color: #111827;
       transform: translateY(-1px);
     }
 
-    .tabs {
-      display: inline-flex;
-      padding: 3px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      gap: 4px;
-    }
-
-    .tab {
-      border: none;
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-size: 12px;
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: background var(--transition-fast), color var(--transition-fast),
-        transform var(--transition-fast);
-    }
-
-    .tab.active {
-      background: rgba(15, 23, 42, 1);
-      color: var(--text-main);
-      transform: translateY(-1px);
-    }
-
+    /* Auth section */
     .auth-section {
       flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 12px;
+      gap: 16px;
     }
 
-    .auth-section h2 {
+    .auth-header {
+      margin-top: 10px;
+    }
+
+    .auth-header h2 {
       font-size: 22px;
-      margin-top: 6px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
-    .auth-subtitle {
+    .auth-header p {
       font-size: 13px;
       color: var(--text-muted);
-      margin-bottom: 8px;
     }
 
-    form {
+    .auth-actions {
+      margin-top: 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .field label {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .field input {
+    .google-btn {
+      border: 1px solid rgba(148, 163, 184, 0.8);
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.95);
-      color: var(--text-main);
-      padding: 8px 12px;
-      font-size: 13px;
-      outline: none;
-      transition: border var(--transition-fast), box-shadow var(--transition-fast),
-        background var(--transition-fast), transform 80ms ease-out;
-    }
-
-    .field input:focus {
-      border-color: rgba(34, 211, 238, 0.9);
-      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6);
-      background: rgba(15, 23, 42, 1);
-      transform: translateY(-0.5px);
-    }
-
-    .primary-btn {
-      margin-top: 2px;
-      border-radius: 999px;
-      border: none;
       padding: 9px 14px;
-      background: linear-gradient(135deg, #22d3ee, #0284c7);
-      color: #020617;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      font-size: 12px;
-      text-transform: uppercase;
-      cursor: pointer;
+      background: #f9fafb;
+      color: #111827;
+      font-size: 13px;
       display: inline-flex;
+      align-items: center;
       justify-content: center;
-      align-items: center;
-      box-shadow: 0 10px 26px rgba(34, 211, 238, 0.6);
+      gap: 10px;
+      cursor: pointer;
+      font-weight: 500;
       transition: transform var(--transition-med), box-shadow var(--transition-med),
-        filter var(--transition-med);
+        background var(--transition-med), color var(--transition-med);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.5);
     }
 
-    .primary-btn:hover {
-      transform: translateY(-1.5px);
-      filter: brightness(1.06);
-      box-shadow: 0 14px 38px rgba(34, 211, 238, 0.7);
+    .google-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.7);
+      background: #ffffff;
+      color: #020617;
     }
 
-    .primary-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 8px 22px rgba(34, 211, 238, 0.55);
+    .google-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: conic-gradient(
+        from 0deg,
+        #ea4335,
+        #fbbc05,
+        #34a853,
+        #4285f4,
+        #ea4335
+      );
+      position: relative;
     }
 
-    .helper-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .google-icon::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: inherit;
+      background: #f9fafb;
+    }
+
+    .google-icon::before {
+      content: "";
+      position: absolute;
+      inset: 5px 6px;
+      border-radius: 2px;
+      border: 2px solid #111827;
+      border-left-color: transparent;
+    }
+
+    .auth-note {
       font-size: 11px;
       color: var(--text-muted);
-      margin-top: 2px;
     }
 
     .msg {
@@ -304,10 +291,6 @@
       color: var(--danger);
     }
 
-    .msg.ok {
-      color: #4ade80;
-    }
-
     .hidden {
       display: none !important;
     }
@@ -318,7 +301,7 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      animation: dash-in 260ms var(--transition-med);
+      animation: dash-in 220ms var(--transition-med);
     }
 
     @keyframes dash-in {
@@ -343,11 +326,12 @@
       display: block;
       font-size: 11px;
       color: var(--text-muted);
+      margin-top: 2px;
     }
 
     .logout-btn {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.8);
       background: rgba(15, 23, 42, 0.98);
       color: var(--text-muted);
       padding: 5px 10px;
@@ -358,15 +342,15 @@
     }
 
     .logout-btn:hover {
-      background: rgba(15, 23, 42, 1);
-      color: #e5e7eb;
+      background: #f9fafb;
+      color: #111827;
       transform: translateY(-1px);
     }
 
     .balance-card {
       border-radius: var(--radius-xl);
       padding: 18px 16px 14px;
-      background: rgba(15, 23, 42, 0.95);
+      background: rgba(15, 23, 42, 0.98);
       border: 1px solid rgba(148, 163, 184, 0.5);
     }
 
@@ -412,7 +396,7 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: 8px;
+      margin-top: 10px;
     }
 
     .action-btn {
@@ -431,8 +415,9 @@
 
     .action-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.9);
-      border-color: rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.7);
+      border-color: rgba(249, 250, 251, 0.9);
+      background: rgba(15, 23, 42, 1);
     }
 
     .action-title {
@@ -457,16 +442,16 @@
     }
 
     .action-chip.primary {
-      border-color: rgba(34, 211, 238, 0.9);
-      background: rgba(8, 47, 73, 0.9);
-      color: #e0f7fa;
+      border-color: rgba(249, 250, 251, 0.9);
+      background: #f9fafb;
+      color: #111827;
     }
 
     .drawer {
-      margin-top: 6px;
+      margin-top: 8px;
       border-radius: var(--radius-lg);
       padding: 10px 12px;
-      background: rgba(15, 23, 42, 0.96);
+      background: rgba(15, 23, 42, 0.98);
       border: 1px solid rgba(148, 163, 184, 0.5);
       font-size: 11px;
       display: none;
@@ -491,6 +476,11 @@
       gap: 3px;
     }
 
+    .drawer-row label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
     .drawer-row input {
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.6);
@@ -502,19 +492,19 @@
     }
 
     .drawer-row input:focus {
-      border-color: rgba(34, 211, 238, 0.9);
+      border-color: rgba(249, 250, 251, 0.9);
     }
 
     .drawer-actions {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
-      margin-top: 2px;
+      margin-top: 4px;
     }
 
     .btn-ghost {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.7);
       background: transparent;
       color: var(--text-muted);
       font-size: 11px;
@@ -524,28 +514,28 @@
     }
 
     .btn-ghost:hover {
-      background: rgba(15, 23, 42, 1);
-      color: #e5e7eb;
+      background: #f9fafb;
+      color: #111827;
     }
 
     .btn-small-primary {
       border-radius: 999px;
       border: none;
-      background: linear-gradient(135deg, #22d3ee, #0284c7);
-      color: #020617;
+      background: #f9fafb;
+      color: #111827;
       font-size: 11px;
       padding: 5px 10px;
       cursor: pointer;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      box-shadow: 0 6px 16px rgba(34, 211, 238, 0.6);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
       transition: transform var(--transition-fast), box-shadow var(--transition-fast);
     }
 
     .btn-small-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(34, 211, 238, 0.7);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.6);
     }
 
     .toast {
@@ -562,7 +552,7 @@
       display: none;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.9);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.7);
       z-index: 20;
     }
 
@@ -592,81 +582,49 @@
 </head>
 <body>
   <div class="app-shell">
-    <!-- Brand panel -->
+    <!-- Left panel -->
     <aside class="brand-panel">
       <div>
         <div class="logo-mark">
           <div class="logo-glyph"><span>◎</span></div>
           <div class="logo-text">Token Bank</div>
         </div>
-        <h1 class="brand-title">Game tokens, not real money.</h1>
+        <h1 class="brand-title">
+          Clean token tracking<br />for your game group.
+        </h1>
         <p class="brand-subtitle">
-          Keep score with your friends, check in daily for bonus tokens,
-          and transfer them like a tiny in-game bank.
+          Sign in with Google, get a daily token check-in, and transfer tokens
+          to your friends by their Gmail address.
         </p>
       </div>
       <p class="brand-note">
-        Tokens here are <strong>for games only</strong>. No real currency,
-        no fees, just bragging rights and debt between friends.
+        Tokens here are <strong>not real money</strong>. They only represent
+        points or credits in your own games.
       </p>
     </aside>
 
-    <!-- Main panel -->
+    <!-- Right panel -->
     <main class="main-panel">
       <div class="top-bar">
-        <span>Game Token Bank · Firebase</span>
-        <button type="button" id="demoFillBtn">Fill demo user</button>
+        <span><strong>Token Bank</strong> · Firebase / Google</span>
+        <button type="button" id="debugBtn">Debug: console state</button>
       </div>
 
       <!-- Auth -->
       <section id="authSection" class="auth-section">
-        <div class="tabs">
-          <button class="tab active" data-tab="login">Login</button>
-          <button class="tab" data-tab="signup">Sign up</button>
+        <div class="auth-header">
+          <h2>Sign in</h2>
+          <p>Use your Google account (Gmail) to sign in or create an account.</p>
         </div>
-
-        <div id="loginPane">
-          <h2>Welcome back</h2>
-          <p class="auth-subtitle">Log in with your nickname and password.</p>
-          <form id="loginForm">
-            <div class="field">
-              <label for="login-username">Nickname</label>
-              <input id="login-username" autocomplete="username" required />
-            </div>
-            <div class="field">
-              <label for="login-password">Password</label>
-              <input id="login-password" type="password" autocomplete="current-password" required />
-            </div>
-            <button class="primary-btn" type="submit">Log in</button>
-            <div class="helper-row">
-              <span>Accounts are stored in Firebase Firestore.</span>
-            </div>
-            <div id="loginMsg" class="msg"></div>
-          </form>
-        </div>
-
-        <div id="signupPane" class="hidden">
-          <h2>Create your account</h2>
-          <p class="auth-subtitle">One nickname per person. This is only for your friend group.</p>
-          <form id="signupForm">
-            <div class="field">
-              <label for="signup-username">Nickname</label>
-              <input id="signup-username" required />
-            </div>
-            <div class="field">
-              <label for="signup-password">Password</label>
-              <input id="signup-password" type="password" required />
-            </div>
-            <div class="field">
-              <label for="signup-start">Starting tokens (optional)</label>
-              <input id="signup-start" type="number" min="0" placeholder="Default: 0" />
-            </div>
-            <button class="primary-btn" type="submit">Sign up</button>
-            <div class="helper-row">
-              <span>For demo only: password is stored hashed, but still simple.</span>
-            </div>
-            <div id="signupMsg" class="msg"></div>
-          </form>
+        <div class="auth-actions">
+          <button type="button" id="googleSignInBtn" class="google-btn">
+            <span class="google-icon"></span>
+            <span>Continue with Google</span>
+          </button>
+          <p class="auth-note">
+            On first sign-in, a token account is created for your Google email.
+          </p>
+          <div id="authMsg" class="msg"></div>
         </div>
       </section>
 
@@ -688,7 +646,7 @@
           </div>
           <div class="balance-meta">
             <span id="checkinStatus">Daily check-in available</span>
-            <span class="pill">Backed by Firestore</span>
+            <span class="pill">Firestore · Google Auth</span>
           </div>
         </div>
 
@@ -701,17 +659,17 @@
 
           <button class="action-btn" id="transferToggleBtn">
             <div class="action-title">Transfer tokens</div>
-            <div class="action-sub">Send tokens to another nickname.</div>
-            <div class="action-chip">Peer to peer</div>
+            <div class="action-sub">Send tokens to another Gmail account.</div>
+            <div class="action-chip">By email</div>
           </button>
         </div>
 
         <div id="transferDrawer" class="drawer">
-          <div>Send tokens to a friend using their nickname.</div>
+          <div>Enter your friend’s Gmail address and token amount.</div>
           <div class="drawer-row">
             <div class="field-inline">
-              <label for="transfer-to">To (nickname)</label>
-              <input id="transfer-to" placeholder="friend_nickname" />
+              <label for="transfer-to">To (Gmail)</label>
+              <input id="transfer-to" placeholder="friend@example.com" />
             </div>
             <div class="field-inline">
               <label for="transfer-amount">Amount</label>
@@ -738,17 +696,18 @@
       apiKey: "PASTE_YOUR_API_KEY",
       authDomain: "PASTE_YOUR_AUTH_DOMAIN",
       projectId: "PASTE_YOUR_PROJECT_ID",
-      // storageBucket, messagingSenderId, appId are optional here but recommended:
-      // storageBucket: "...",
-      // messagingSenderId: "...",
-      // appId: "..."
+      // Optional but recommended:
+      // storageBucket: "....",
+      // messagingSenderId: "....",
+      // appId: "....",
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     const USERS_COLLECTION = "users";
-    const STORAGE_KEY_CURRENT = "tokenBank_currentUser";
+    const STORAGE_KEY_CURRENT = "tokenBank_currentUID";
 
     const getTodayKey = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
@@ -761,38 +720,47 @@
       setTimeout(() => toast.classList.remove("show"), 2200);
     };
 
-    async function hashPassword(password) {
-      // Very simple SHA-256 hash using Web Crypto (still not real security, just better than plain text)
-      const enc = new TextEncoder();
-      const data = enc.encode(password);
-      const buf = await crypto.subtle.digest("SHA-256", data);
-      const arr = Array.from(new Uint8Array(buf));
-      return arr.map(b => b.toString(16).padStart(2, "0")).join("");
+    function showAuth() {
+      document.getElementById("authSection").classList.remove("hidden");
+      document.getElementById("dashboardSection").classList.add("hidden");
     }
 
-    async function getUserDoc(username) {
-      const ref = db.collection(USERS_COLLECTION).doc(username);
+    function showDashboard() {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("dashboardSection").classList.remove("hidden");
+    }
+
+    async function ensureUserDocument(user) {
+      const ref = db.collection(USERS_COLLECTION).doc(user.uid);
       const snap = await ref.get();
-      return { ref, snap };
+      if (!snap.exists) {
+        const created = getTodayKey();
+        await ref.set({
+          email: user.email || "",
+          displayName: user.displayName || user.email || "Anonymous",
+          tokens: 0,
+          lastCheckin: null,
+          created,
+        });
+        return (await ref.get()).data();
+      }
+      return snap.data();
     }
 
-    async function switchToDashboard(username) {
-      const { snap } = await getUserDoc(username);
-      if (!snap.exists) {
-        showToast("User not found in Firestore.", true);
-        localStorage.removeItem(STORAGE_KEY_CURRENT);
-        return;
-      }
+    async function refreshDashboard(user) {
+      if (!user) return;
+
+      const ref = db.collection(USERS_COLLECTION).doc(user.uid);
+      const snap = await ref.get();
+      if (!snap.exists) return;
       const data = snap.data();
 
-      const authSection = document.getElementById("authSection");
-      const dashboard = document.getElementById("dashboardSection");
-      authSection.classList.add("hidden");
-      dashboard.classList.remove("hidden");
+      document.getElementById("userNameDisplay").textContent =
+        data.displayName || user.displayName || user.email || "Unknown user";
 
-      document.getElementById("userNameDisplay").textContent = username;
       document.getElementById("userMeta").textContent =
-        `Member · Created ${data.created || "today"}`;
+        (data.email || user.email || "") +
+        (data.created ? ` · Created ${data.created}` : "");
 
       document.getElementById("tokenAmount").textContent = data.tokens ?? 0;
 
@@ -811,152 +779,51 @@
       }
     }
 
-    function switchToAuth() {
-      document.getElementById("authSection").classList.remove("hidden");
-      document.getElementById("dashboardSection").classList.add("hidden");
-    }
-
     window.addEventListener("DOMContentLoaded", () => {
-      const tabs = document.querySelectorAll(".tab");
-      const loginPane = document.getElementById("loginPane");
-      const signupPane = document.getElementById("signupPane");
-      const loginForm = document.getElementById("loginForm");
-      const signupForm = document.getElementById("signupForm");
-      const loginMsg = document.getElementById("loginMsg");
-      const signupMsg = document.getElementById("signupMsg");
+      const googleBtn = document.getElementById("googleSignInBtn");
+      const authMsg = document.getElementById("authMsg");
       const logoutBtn = document.getElementById("logoutBtn");
       const checkinBtn = document.getElementById("checkinBtn");
       const transferToggleBtn = document.getElementById("transferToggleBtn");
       const transferDrawer = document.getElementById("transferDrawer");
       const transferCancelBtn = document.getElementById("transferCancelBtn");
       const transferSubmitBtn = document.getElementById("transferSubmitBtn");
-      const demoFillBtn = document.getElementById("demoFillBtn");
+      const debugBtn = document.getElementById("debugBtn");
 
-      // Tabs
-      tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-          tabs.forEach((t) => t.classList.remove("active"));
-          tab.classList.add("active");
-          const target = tab.dataset.tab;
-          if (target === "login") {
-            loginPane.classList.remove("hidden");
-            signupPane.classList.add("hidden");
-          } else {
-            signupPane.classList.remove("hidden");
-            loginPane.classList.add("hidden");
-          }
-          loginMsg.textContent = "";
-          signupMsg.textContent = "";
-          loginMsg.className = "msg";
-          signupMsg.className = "msg";
-        });
-      });
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
 
-      // Fill demo
-      demoFillBtn.addEventListener("click", () => {
-        document.getElementById("login-username").value = "demo";
-        document.getElementById("login-password").value = "demo123";
-        showToast("Filled demo username and password.");
-      });
-
-      // Sign up
-      signupForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        signupMsg.textContent = "";
-        signupMsg.className = "msg";
-
-        const username = document.getElementById("signup-username").value.trim();
-        const password = document.getElementById("signup-password").value;
-        const startVal = document.getElementById("signup-start").value;
-
-        if (!username) {
-          signupMsg.textContent = "Nickname required.";
-          signupMsg.classList.add("error");
-          return;
-        }
-
+      googleBtn.addEventListener("click", async () => {
+        authMsg.textContent = "";
+        authMsg.className = "msg";
         try {
-          const { snap, ref } = await getUserDoc(username);
-          if (snap.exists) {
-            signupMsg.textContent = "This nickname is already taken.";
-            signupMsg.classList.add("error");
-            return;
-          }
-
-          const created = getTodayKey();
-          const tokens = startVal === "" ? 0 : Math.max(0, Number(startVal) || 0);
-          const passwordHash = await hashPassword(password);
-
-          await ref.set({
-            passwordHash,
-            tokens,
-            lastCheckin: null,
-            created,
-          });
-
-          localStorage.setItem(STORAGE_KEY_CURRENT, username);
-          signupMsg.textContent = "Account created.";
-          signupMsg.classList.add("ok");
-          await switchToDashboard(username);
-          showToast("Account created.");
+          await auth.signInWithPopup(provider);
+          // onAuthStateChanged will handle the rest
         } catch (err) {
           console.error(err);
-          signupMsg.textContent = "Error creating account (check console).";
-          signupMsg.classList.add("error");
+          authMsg.textContent = "Error signing in with Google (see console).";
+          authMsg.classList.add("error");
         }
       });
 
-      // Login
-      loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        loginMsg.textContent = "";
-        loginMsg.className = "msg";
-
-        const username = document.getElementById("login-username").value.trim();
-        const password = document.getElementById("login-password").value;
-
-        try {
-          const { snap } = await getUserDoc(username);
-          if (!snap.exists) {
-            loginMsg.textContent = "Invalid nickname or password.";
-            loginMsg.classList.add("error");
-            return;
-          }
-          const data = snap.data();
-          const passwordHash = await hashPassword(password);
-
-          if (data.passwordHash !== passwordHash) {
-            loginMsg.textContent = "Invalid nickname or password.";
-            loginMsg.classList.add("error");
-            return;
-          }
-
-          localStorage.setItem(STORAGE_KEY_CURRENT, username);
-          await switchToDashboard(username);
-          showToast("Logged in.");
-        } catch (err) {
-          console.error(err);
-          loginMsg.textContent = "Error logging in (check console).";
-          loginMsg.classList.add("error");
-        }
-      });
-
-      // Logout
       logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem(STORAGE_KEY_CURRENT);
-        switchToAuth();
-        showToast("Logged out.");
+        auth.signOut().catch(console.error);
+      });
+
+      debugBtn.addEventListener("click", () => {
+        console.log("Current user:", auth.currentUser);
+        showToast("Check console.", false);
       });
 
       // Daily check-in
       checkinBtn.addEventListener("click", async () => {
-        const current = localStorage.getItem(STORAGE_KEY_CURRENT);
-        if (!current) {
-          showToast("Log in first.", true);
+        const user = auth.currentUser;
+        if (!user) {
+          showToast("Sign in first.", true);
           return;
         }
         const today = getTodayKey();
-        const userRef = db.collection(USERS_COLLECTION).doc(current);
+        const userRef = db.collection(USERS_COLLECTION).doc(user.uid);
 
         try {
           await db.runTransaction(async (tx) => {
@@ -972,7 +839,7 @@
             });
           });
 
-          await switchToDashboard(current);
+          await refreshDashboard(auth.currentUser);
           showToast("+10 tokens added.");
         } catch (err) {
           if (err.message === "Already checked in.") {
@@ -995,17 +862,17 @@
 
       // Transfer
       transferSubmitBtn.addEventListener("click", async () => {
-        const current = localStorage.getItem(STORAGE_KEY_CURRENT);
-        if (!current) {
-          showToast("Log in first.", true);
+        const user = auth.currentUser;
+        if (!user) {
+          showToast("Sign in first.", true);
           return;
         }
 
-        const toUser = document.getElementById("transfer-to").value.trim();
+        const toEmailRaw = document.getElementById("transfer-to").value.trim();
         const amountRaw = document.getElementById("transfer-amount").value;
         const amount = Number(amountRaw);
 
-        if (!toUser || !amountRaw) {
+        if (!toEmailRaw || !amountRaw) {
           showToast("Fill in both fields.", true);
           return;
         }
@@ -1013,40 +880,56 @@
           showToast("Amount must be positive.", true);
           return;
         }
-        if (toUser === current) {
+
+        const toEmail = toEmailRaw.toLowerCase();
+        const fromEmail = (user.email || "").toLowerCase();
+        if (toEmail === fromEmail) {
           showToast("You can't send to yourself.", true);
           return;
         }
 
-        const senderRef = db.collection(USERS_COLLECTION).doc(current);
-        const receiverRef = db.collection(USERS_COLLECTION).doc(toUser);
+        const senderRef = db.collection(USERS_COLLECTION).doc(user.uid);
 
         try {
+          const querySnap = await db
+            .collection(USERS_COLLECTION)
+            .where("email", "==", toEmail)
+            .limit(1)
+            .get();
+
+          if (querySnap.empty) {
+            showToast("Target email not found.", true);
+            return;
+          }
+
+          const receiverDoc = querySnap.docs[0];
+          const receiverRef = receiverDoc.ref;
+
           await db.runTransaction(async (tx) => {
             const senderSnap = await tx.get(senderRef);
             const receiverSnap = await tx.get(receiverRef);
 
             if (!senderSnap.exists) throw new Error("Sender missing.");
-            if (!receiverSnap.exists) throw new Error("Target user not found.");
+            if (!receiverSnap.exists) throw new Error("Target missing.");
 
             const senderData = senderSnap.data();
+            const receiverData = receiverSnap.data();
             if ((senderData.tokens || 0) < amount) {
               throw new Error("Not enough tokens.");
             }
 
             tx.update(senderRef, { tokens: (senderData.tokens || 0) - amount });
-            const recvData = receiverSnap.data();
-            tx.update(receiverRef, { tokens: (recvData.tokens || 0) + amount });
+            tx.update(receiverRef, {
+              tokens: (receiverData.tokens || 0) + amount,
+            });
           });
 
           transferDrawer.classList.remove("open");
           document.getElementById("transfer-amount").value = "";
-          showToast(`Sent ${amount} tokens to ${toUser}.`);
-          await switchToDashboard(current);
+          showToast(`Sent ${amount} tokens to ${toEmail}.`);
+          await refreshDashboard(auth.currentUser);
         } catch (err) {
-          if (err.message === "Target user not found.") {
-            showToast("Target user does not exist.", true);
-          } else if (err.message === "Not enough tokens.") {
+          if (err.message === "Not enough tokens.") {
             showToast("Not enough tokens.", true);
           } else {
             console.error(err);
@@ -1055,21 +938,21 @@
         }
       });
 
-      // Auto-login if we have a current user
-      (async () => {
-        const currentUser = localStorage.getItem(STORAGE_KEY_CURRENT);
-        if (!currentUser) return;
-        try {
-          const { snap } = await getUserDoc(currentUser);
-          if (snap.exists) {
-            await switchToDashboard(currentUser);
-          } else {
-            localStorage.removeItem(STORAGE_KEY_CURRENT);
-          }
-        } catch (err) {
-          console.error(err);
+      // Auth state listener
+      auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+          localStorage.removeItem(STORAGE_KEY_CURRENT);
+          showAuth();
+          return;
         }
-      })();
+
+        localStorage.setItem(STORAGE_KEY_CURRENT, user.uid);
+        await ensureUserDocument(user);
+        await refreshDashboard(user);
+        showDashboard();
+      });
+
+      // If user was logged in before, Auth will restore session automatically.
     });
   </script>
 </body>
